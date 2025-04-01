@@ -1,39 +1,65 @@
-#!/bin/bash
-# Simplified Population-specific Frequency Calculation
-# 使用方法：bash pop_freq_pipeline.sh [输入VCF] [population列表目录] [输出前缀]
+# ==============================================
+# 群体频率计算流程教学（保持原始代码格式）
+# ==============================================
 
-# ====================== 用户配置 ======================
-VCF_FILE="$1"                      # 输入VCF文件路径
-POP_DIR="$2"                       # population样本列表目录
-OUT_PREFIX="$3"                    # 输出文件前缀
-# =====================================================
+# 1. 用bcftools添加变异ID（格式：染色体_位置）
+# 参数说明：
+# --threads 12    : 使用12线程
+# --set-id        : 设置ID格式为"染色体_位置"
+# -Oz            : 输出压缩vcf
+bcftools annotate --threads 12 --set-id +'%CHROM\_%POS' $fvcf path}/$ivcf header}.chr$iK}.vcf.gz -Oz -o chr$fK).updateID.vcf.gz
 
-echo "========================================"
-echo "Population-specific Frequency Calculation"
-echo "输入VCF: $VCF_FILE"
-echo "Population样本目录: $POP_DIR"
-echo "输出前缀: $OUT_PREFIX"
-echo "========================================"
+# 2. 转换为PLINK二进制格式
+# --memory 12000  : 分配12GB内存
+# --vcf          : 输入vcf文件
+# --real-ref-alleles : 保持参考等位基因
+# --make-bed      : 生成bed/bim/fam三件套
+plink --memory 12000 --threads 12 --vcf chr$fK}.updateID.vcf.gz --real-ref-alleles -make-bed --double-id --out chr${K}
 
-# 遍历population列表文件
-for pop_file in "$POP_DIR"/*.txt; do
-    # 从文件名提取population名称
-    pop_name=$(basename "$pop_file" .txt)
-    
-    echo "处理population: $pop_name"
-    
-    # 运行vcftools计算频率
-    vcftools --gzvcf "$VCF_FILE" \
-             --keep "$pop_file" \
-             --freq \
-             --out "${OUT_PREFIX}_${pop_name}"
-    
-    # 检查是否成功生成.frq文件
-    if [ ! -f "${OUT_PREFIX}_${pop_name}.frq" ]; then
-        echo "警告: 未能生成 ${pop_name} 的频率文件"
-    else
-        echo " > 已生成: ${OUT_PREFIX}_${pop_name}.frq"
-    fi
-done
+# 3. 添加群体信息到fam文件
+# 注意：your.id.pop文件格式要求：
+# 第一列：群体ID（如Han）
+# 第二列：样本ID
+# 其他列：忽略
+awk 'NR==FNR{a[$2]=$1; next} {print a[$2], $2, $3, $4,$5, $6}' Population.pop chr$fK}.fam > tmp.fam && mv tmp.fam chr$fK}.fam
 
-echo "所有population处理完成！"
+# 4. 计算群体分层频率
+# --bfile         : 输入PLINK二进制文件
+# --freq          : 计算等位基因频率
+# --family        : 按fam文件中的FID分组计算
+plink --memory 12000 --threads 12 --bfile chr${K} --real-ref-alleles --freq --family --out population_chr${K}
+
+# 5. 添加群体信息到fam文件
+# 注意：your.id.pop文件格式要求：
+# 第一列：群体ID（如Han）
+# 第二列：样本ID
+# 其他列：忽略
+awk 'NR==FNR{a[$2]=$1; next} {print a[$2], $2, $3, $4,$5, $6}' Province.pop chr$fK}.fam > tmp.fam && mv tmp.fam chr$fK}.fam
+
+# 6. 计算群体分层频率
+# --bfile         : 输入PLINK二进制文件
+# --freq          : 计算等位基因频率
+# --family        : 按fam文件中的FID分组计算
+plink --memory 12000 --threads 12 --bfile chr${K} --real-ref-alleles --freq --family --out province_chr${K}
+
+
+
+
+# ==============================================
+# 关键文件说明：
+# 输入文件：
+#   - $ivcf header}.chr$iK}.vcf.gz : 原始VCF
+#   - your.id.pop                  : 群体信息文件
+#
+# 输出文件：
+#   - chr${K}.frq.family           : 各群体频率结果
+#   格式：
+#   CHR SNP A1 A2 MAF NCHROBS 群体ID
+# ==============================================
+
+# 注意事项：
+# 1. 所有文件需在同一目录下
+# 2. 变量说明：
+#   - $fK 和 $iK 代表染色体编号
+#   - $fvcf path 是VCF文件路径
+# 3. 内存不足时可降低--memory参数
