@@ -35,21 +35,91 @@ This pipeline guides you through:
 - Using only **command-line tools** (`bcftools`, `vcftools`,`plink`)  
 
 ### **A. Prerequisites**  
-Install the following tools:  
-```bash
-# Install miniconda (in user directory)  
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh  
-bash Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda  
-source $HOME/miniconda/bin/activate  
+Here's how to install bcftools, vcftools, and PLINK for bioinformatics analysis:
 
-# Install tools via conda  
-conda install -c bioconda bcftools vcftools -y  
-```  
-🔹 **Workaround for firewall restrictions:**  
-If `wget` is blocked, download `Miniconda3-latest-Linux-x86_64.sh` locally and upload to the Linux server via:  
+### **1. bcftools Installation**
+**Recommended method (via conda):**
 ```bash
-scp Miniconda3-latest-Linux-x86_64.sh username@cluster:/path/to/destination  
+conda install -c bioconda bcftools
 ```
+
+**Alternative methods:**
+```bash
+# Ubuntu/Debian
+sudo apt-get install bcftools
+
+# CentOS/RHEL
+sudo yum install bcftools
+
+# From source
+wget https://github.com/samtools/bcftools/releases/download/1.17/bcftools-1.17.tar.bz2
+tar -xjf bcftools-1.17.tar.bz2
+cd bcftools-1.17
+make
+sudo make install
+```
+
+---
+
+### **2. vcftools Installation**
+**Recommended method (via conda):**
+```bash
+conda install -c bioconda vcftools
+```
+
+**Alternative methods:**
+```bash
+# Ubuntu/Debian
+sudo apt-get install vcftools
+
+# From source
+wget https://github.com/vcftools/vcftools/releases/download/v0.1.16/vcftools-0.1.16.tar.gz
+tar -xzf vcftools-0.1.16.tar.gz
+cd vcftools-0.1.16
+./configure
+make
+sudo make install
+```
+
+---
+
+### **3. PLINK Installation**
+**Recommended method (via conda):**
+```bash
+conda install -c bioconda plink
+```
+
+**Alternative methods:**
+```bash
+# Ubuntu/Debian
+sudo apt-get install plink
+
+# Mac (Homebrew)
+brew install plink
+
+# Direct download (Linux/Mac)
+wget http://s3.amazonaws.com/plink1-assets/plink_linux_x86_64_20231017.zip  # Linux
+unzip plink_linux_x86_64_20231017.zip
+chmod +x plink
+sudo mv plink /usr/local/bin/
+
+# PLINK 2 (newer version)
+wget https://s3.amazonaws.com/plink2-assets/plink2_linux_avx2_20231017.zip
+unzip plink2_linux_avx2_20231017.zip
+```
+
+---
+
+### **4. Verify Installations**
+```bash
+bcftools --version
+vcftools --version
+plink --version
+conda create -n genomics bcftools vcftools plink -c bioconda
+conda activate genomics
+```
+
+---
 
 ### **B. Pipeline Steps**  
 1. **Prepare input files**  
@@ -174,10 +244,3 @@ less result.tsv
 
 
 --- 
-
-### **Key Features**  
-✅ Supports **joint-called VCFs** and **single-sample GVCFs**  
-✅ Handles **multi-population** stratification  
-✅ Optimized for **large datasets**  
-
-Let me know if you'd like to refine any section further! 🚀
