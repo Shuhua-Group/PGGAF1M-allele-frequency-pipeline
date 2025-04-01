@@ -43,23 +43,5 @@ awk 'NR==FNR{a[$2]=$1; next} {print a[$2], $2, $3, $4,$5, $6}' Province.pop chr$
 plink --memory 12000 --threads 12 --bfile chr${K} --real-ref-alleles --freq --family --out province_chr${K}
 
 
-
-
 # ==============================================
-# 关键文件说明：
-# 输入文件：
-#   - $ivcf header}.chr$iK}.vcf.gz : 原始VCF
-#   - your.id.pop                  : 群体信息文件
-#
-# 输出文件：
-#   - chr${K}.frq.family           : 各群体频率结果
-#   格式：
-#   CHR SNP A1 A2 MAF NCHROBS 群体ID
-# ==============================================
-
-# 注意事项：
-# 1. 所有文件需在同一目录下
-# 2. 变量说明：
-#   - $fK 和 $iK 代表染色体编号
-#   - $fvcf path 是VCF文件路径
-# 3. 内存不足时可降低--memory参数
+# 内存不足时可降低--memory参数
