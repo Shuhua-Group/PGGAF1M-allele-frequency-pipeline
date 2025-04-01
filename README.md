@@ -140,7 +140,7 @@ If scripts fail after downloading via GitHub on Windows:
 - Convert line endings to Unix format:  
   ```bash
       vim pipeline.sh
-      #执行转换命令
+      #Switch the shell panel
       :set ff=unix
       :wq
   ```
