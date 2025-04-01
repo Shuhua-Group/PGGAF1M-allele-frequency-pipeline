@@ -32,7 +32,7 @@ Most downstream population genetic analyses use **biallelic SNPs** after QC. If 
 This pipeline guides you through:  
 - Extracting genomic regions from VCF files  
 - Computing allele frequencies for different populations  
-- Using only **command-line tools** (`bcftools`, `vcftools`)  
+- Using only **command-line tools** (`bcftools`, `vcftools`,`plink`)  
 
 ### **A. Prerequisites**  
 Install the following tools:  
@@ -99,16 +99,27 @@ bash af_processing_pipeline.sh [input_VCF] [output_directory]
 ## **4. Multi-Population/Cross-Region Analysis**  
 If the dataset contains **multiple populations/provinces** (e.g., Han, Balti, Tibetan), compute frequencies separately.  
 
-### **Example: Population ID List (`Han.txt`)**  
+### **Example: Population ID List (`Population.pop`)**  
 ```
-Sample1  
-Sample2  
+Han	HG00123
+Han	HG00124
+Han	HG00125
+Han	HG00126
+...  
+```
+
+### **Example: Province ID List (`Province.pop`)**  
+```
+Shanghai	HG00123
+Shanghai	HG00124
+Beijing	HG00125
+Xizang	HG00126
 ...  
 ```
 
 ```bash
 # Simplified Population-specific Frequency Calculation Usage:
-bash pop_freq_pipeline.sh [input_VCF] [Population List] [output]
+bash pop_freq_pipeline.sh
 # Simply run this shell script directly, and edit the input/output paths inline using vim as required.
 ```
 
@@ -158,11 +169,9 @@ less result.tsv
 | chr1 | rs12345 | 100 | A | G | 0.75 | 0.25 | MyDataset | 100 | ... |  
 
 ### **B. Population-Specific Files**  
-- `Population1.frq`  
-- `Shanghai.frq`  
-- `Tibet.frq`  
+- `Population_chr${K}.frq.family `  
+- `Province_chr${K}.frq.family`   
 
-**Final Output:** `final_result.tsv`  
 
 --- 
 
