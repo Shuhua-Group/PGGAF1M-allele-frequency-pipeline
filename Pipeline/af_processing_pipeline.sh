@@ -9,6 +9,8 @@ DATASET="MyDataset"                # 数据集名称
 POPULATION="global1"                # 群体标识
 # ========================================================
 
+module load bcftools
+
 # 创建输出目录
 mkdir -p "$OUTPUT_DIR"
 

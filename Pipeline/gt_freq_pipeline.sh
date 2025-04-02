@@ -12,6 +12,9 @@ SAMPLE_SIZE=100         # 样本量（会自动计算覆盖）
 POPULATION="global"     # 群体标识
 # --------------------------
 
+module load bcftools
+module load vcftools
+
 # 创建输出目录
 mkdir -p "$OUTPUT_DIR"
 
