@@ -195,27 +195,8 @@ bash pop_freq_pipeline.sh
 
 ---
 
-## **5. Handling Non-Joint-Called GVCFs**  
-If only **single-sample GVCFs** are available:  
-- Extract **genotype/allele frequency** data per sample using `vcftools`  
-- Merge results  
 
-### **Pipeline 1: Genotype-Based**  
-```bash
-# GT-based Frequency Calculation Pipeline Usage
-bash gt_freq_pipeline.sh [input_VCF_directory] [output_directory]
-# Simply run this shell script directly, and edit the input/output paths inline using vim as required. 
-```
-
-### **Pipeline 2: Allele Frequency-Based (Not Recommended)**  
-```bash
-# AF-based Frequency Calculation Pipeline Usage
-bash af_freq_pipeline.sh [input_VCF_directory] [output_directory]
-# Simply run this shell script directly, and edit the input/output paths inline using vim as required. 
-```
----
-
-## **6. Troubleshooting**  
+## **5. Troubleshooting**  
 ⚠️ **Windows/Linux Line Ending Issues:**  
 If scripts fail after downloading via GitHub on Windows:  
 - Convert line endings to Unix format:  
@@ -228,7 +209,7 @@ If scripts fail after downloading via GitHub on Windows:
 
 ---
 
-## **7. Output Validation**  
+## **6. Output Validation**  
 ### **A. Frequency File (`result.tsv`)**  
 ```bash
 less result.tsv  
