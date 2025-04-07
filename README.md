@@ -4,7 +4,8 @@ Here’s a professional English translation of your README for the **PGG.AF1M Fr
 
 # **Version: PGG.AF1M Frequency Data Pipeline**
 
-## **1. Preprocessing**  
+## **1. Preprocessing** 
+Perform joint calling and VQSR filtering using GATK. 
 Before calculating allele frequencies, ensure the data has undergone **quality control (QC)** and preprocessing.  
 
 ```bash
