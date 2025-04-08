@@ -7,6 +7,7 @@ VCF_FILE="/home/shenzhuoyang/PGHAdatabase/SNP_filtered_variants.vcf.gz"         
 OUTPUT_DIR="/home/shenzhuoyang/PGHAdatabase"                    # 输出目录路径
 DATASET="MyDataset"                # 数据集名称
 POPULATION="global1"                # 群体标识
+SAMPLE_SIZE=100                    # 手动指定样本量（根据实际情况修改）
 # ========================================================
 
 module load bcftools
@@ -18,6 +19,7 @@ echo "========================================"
 echo "AF-based Frequency Processing Pipeline"
 echo "输入文件: $VCF_FILE"
 echo "输出目录: $OUTPUT_DIR"
+echo "样本量: $SAMPLE_SIZE"
 echo "========================================"
 
 # 步骤1：计算等位基因频率
@@ -54,8 +56,7 @@ if [ ! -s "$OUTPUT_DIR/rsid_map.tsv" ]; then
 fi
 
 # 步骤3：计算样本量（从.frq文件获取）
-echo "步骤3/4：计算样本量..."
-SAMPLE_SIZE=$(awk 'NR==2 {split($5,a,":"); print a[1]*2}' "$OUTPUT_DIR/output_frequency.frq")
+echo "步骤3/4：使用预设样本量..."
 echo " > 检测到样本量: $SAMPLE_SIZE"
 
 # 步骤4：处理频率数据并生成最终结果
