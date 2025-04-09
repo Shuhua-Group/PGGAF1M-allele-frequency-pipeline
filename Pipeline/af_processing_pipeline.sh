@@ -9,7 +9,7 @@ DATASET="MyDataset"                # 数据集名称
 POPULATION="global1"                # 群体标识
 SAMPLE_SIZE=100                    # 手动指定样本量（根据实际情况修改）
 # ========================================================
-
+module load vcftools
 module load bcftools
 
 # 创建输出目录
