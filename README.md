@@ -1,5 +1,4 @@
-Here’s a professional English translation of your README for the **PGG.AF1M Frequency Data Pipeline**:
-
+**PGG.AF1M Frequency Data Pipeline**:
 ---
 
 # **Version: PGG.AF1M Frequency Data Pipeline**
