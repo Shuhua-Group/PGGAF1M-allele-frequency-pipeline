@@ -187,6 +187,14 @@ Xizang	HG00126
 ...  
 ```
 
+### **Example: Sample ID List (`samples_province_pop.txt`)**  
+```
+WGC022072D    Xizang  Sherpa
+WGC022073D    Xizang  Sherpa
+WGC022074D    Xizang  Sherpa
+...  
+```
+
 ```bash
 # Simplified Population-specific Frequency Calculation Usage:
 bash pop_freq_pipeline.sh
