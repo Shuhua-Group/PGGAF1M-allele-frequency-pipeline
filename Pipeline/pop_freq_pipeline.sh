@@ -5,6 +5,8 @@
 
 module load bcftools
 module load plink
+module load plink2 
+
 # ==============================================
 # 添加vcf路径
 # ==============================================
@@ -16,29 +18,30 @@ for K in {1..22} X Y M; do
     bcftools annotate --threads 12 --set-id +'%CHROM\_%POS' ${vcf_path}/${vcf_header}.chr${K}.vcf.gz -Oz -o chr${K}.updateID.vcf.gz
 
     # 2. 转换为PLINK二进制格式
-    plink --memory 12000 --threads 12 --vcf chr${K}.updateID.vcf.gz --real-ref-alleles -make-bed --double-id --out chr${K}
+    plink --memory 12000 --threads 12 --vcf chr${K}.updateID.vcf.gz --real-ref-alleles --make-bed --double-id --out chr${K}
 
     # 3. 添加群体信息（民族）到fam文件
-    awk 'NR==FNR{a[$2]=$1; next} {print a[$2], $2, $3, $4,$5, $6}' Population.pop chr${K}.fam > tmp.fam && mv tmp.fam chr${K}.fam
+    awk 'NR==FNR{a[$2]=$1; next} {print a[$2], $2, $3, $4, $5, $6}' Population.pop chr${K}.fam > tmp.fam && mv tmp.fam chr${K}.fam
 
-    # 4. 计算群体（民族）分层频率
+    # 4. 计算民族分层的等位基因频率
     plink --memory 12000 --threads 12 --bfile chr${K} --real-ref-alleles --freq --family --out population_chr${K}
 
-    # 4.1 计算群体（民族）基因型频率
-    plink --memory 12000 --threads 12 --bfile chr${K} --freqx --family --out genotype_population_chr${K}
+    # 4.1 计算民族分层的基因型频率（使用 plink2）
+    plink2 --threads 12 --memory 12000 --bfile chr${K} --keep-fam --geno-counts --out genotype_population_chr${K}
 
     # 5. 添加群体信息（省份）到fam文件
-    awk 'NR==FNR{a[$2]=$1; next} {print a[$2], $2, $3, $4,$5, $6}' Province.pop chr${K}.fam > tmp.fam && mv tmp.fam chr${K}.fam
+    awk 'NR==FNR{a[$2]=$1; next} {print a[$2], $2, $3, $4, $5, $6}' Province.pop chr${K}.fam > tmp.fam && mv tmp.fam chr${K}.fam
 
-    # 6. 计算群体（省份）分层频率
+    # 6. 计算省份分层的等位基因频率
     plink --memory 12000 --threads 12 --bfile chr${K} --real-ref-alleles --freq --family --out province_chr${K}
 
-    # 6.1 计算群体（省份）基因型频率
-    plink --memory 12000 --threads 12 --bfile chr${K} --freqx --family --out genotype_province_chr${K}
+    # 6.1 计算省份分层的基因型频率（使用 plink2）
+    plink2 --threads 12 --memory 12000 --bfile chr${K} --keep-fam --geno-counts --out genotype_province_chr${K}
 
     # ==============================================
     # 内存不足时可降低--memory参数
 done
+
 
 
 
@@ -90,8 +93,8 @@ for province in $(cut -f2 samples_province_pop.txt | sort | uniq); do
         # 计算等位基因频率
         plink --bfile ${province} --keep ${province}_${pop}.samples --freq --out ${province}_${pop}_freq
 
-        # 计算基因型频率（freqx）
-        plink --bfile ${province} --keep ${province}_${pop}.samples --freqx --out ${province}_${pop}_genofreq
+        # 计算基因型频率
+        plink2 --bfile ${province} --keep ${province}_${pop}.samples --geno-counts --out ${province}_${pop}_genocounts
     done
 done
 
