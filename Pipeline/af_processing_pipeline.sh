@@ -6,10 +6,11 @@
 VCF_FILE="/home/shenzhuoyang/PGHAdatabase/SNP_filtered_variants.vcf.gz"                      # 输入VCF文件路径
 OUTPUT_DIR="/home/shenzhuoyang/PGHAdatabase"                    # 输出目录路径
 DATASET="MyDataset"                # 数据集名称
-POPULATION="global1"                # 群体标识
+POPULATION="global1"                # 群体标识,更改成你样本的族群
 # ========================================================
 module load vcftools
 module load bcftools
+module load plink2
 
 # 创建输出目录
 mkdir -p "$OUTPUT_DIR"
@@ -27,6 +28,9 @@ if [[ "$VCF_FILE" == *.gz ]]; then
 else
     vcftools --vcf "$VCF_FILE" --freq --out "$OUTPUT_DIR/output_frequency"
 fi
+# 步骤1.1：使用 plink2 计算实际基因型频率
+echo "步骤1.1：使用 plink2 计算基因型频率..."
+plink2 --vcf "$VCF_FILE" --geno-counts --out "$OUTPUT_DIR/genotype_counts"
 
 # 检查.frq文件是否生成成功
 if [ ! -s "$OUTPUT_DIR/output_frequency.frq" ]; then
@@ -58,8 +62,9 @@ echo "步骤3/4：计算样本量..."
 SAMPLE_SIZE=$(awk 'NR==2 {split($5,a,":"); print a[1]*2}' "$OUTPUT_DIR/output_frequency.frq")
 echo " > 检测到样本量: $SAMPLE_SIZE"
 
-# 步骤4：处理频率数据并生成最终结果
-echo "步骤4/4：处理频率数据..."
+# 步骤4：处理频率和基因型数据
+echo "步骤4/4：处理频率数据并合并基因型频率..."
+
 awk -v dataset="'$DATASET'" -v population="'$POPULATION'" '
 BEGIN {
     OFS = "\t";
@@ -68,44 +73,42 @@ BEGIN {
           "heterozygous", "heterozygous_freq", "homozygous_alternative",
           "homozygous_alternative_freq", "variant", "population";
 }
-NR==FNR && FNR>1 {
-    split($5, ref, ":");
-    split($6, alt, ":");
-    key = $1 SUBSEP $2;
-    pos_map[key] = $0;
-    ref_map[key] = ref[1];
-    alt_map[key] = alt[1];
-    freq_map[key] = ref[2] "\t" alt[2];
-    sample_size_map[key] = $4 / 2;
+FNR==NR && $1 !~ /^#/ {
+    key = $1 "_" $2;
+    ref_allele = $4;
+    alt_allele = $5;
+    ref_count = $6;
+    het_count = $7;
+    alt_count = $8;
+    total = ref_count + het_count + alt_count;
+    if (total > 0) {
+        gcount_map[key] = ref_count "\t" het_count "\t" alt_count "\t" total "\t" ref_allele "\t" alt_allele;
+    }
     next;
 }
-{
-    rsid_map[$1,$2] = $3;
-}
-END {
-    for (key in pos_map) {
-        split(key, arr, SUBSEP);
-        chrom = arr[1];
-        pos = arr[2];
-        rsid = (key in rsid_map) ? rsid_map[key] : ".";
-        split(freq_map[key], freqs, "\t");
-        ref_freq = freqs[1];
-        alt_freq = freqs[2];
-        hom_ref = ref_freq * ref_freq;
-        het = 2 * ref_freq * alt_freq;
-        hom_alt = alt_freq * alt_freq;
-        hom_ref_gt = ref_map[key] ref_map[key];
-        het_gt = ref_map[key] alt_map[key];
-        hom_alt_gt = alt_map[key] alt_map[key];
-        variant = chrom ":" pos "-" ref_map[key] "-" alt_map[key];
-        print chrom, rsid, pos, ref_map[key], alt_map[key], ref_freq, alt_freq,
-              dataset, sample_size_map[key],
-              hom_ref_gt, hom_ref,
-              het_gt, het,
-              hom_alt_gt, hom_alt,
+FNR>1 {
+    key = $1 "_" $2;
+    rsid = $3;
+    if (key in gcount_map) {
+        split(gcount_map[key], gc, "\t");
+        ref_gt = gc[5] gc[5];
+        het_gt = gc[5] gc[6];
+        alt_gt = gc[6] gc[6];
+        hom_ref = gc[1];
+        het = gc[2];
+        hom_alt = gc[3];
+        total = gc[4];
+        ref_freq = hom_ref / total;
+        alt_freq = hom_alt / total;
+        variant = $1 ":" $2 "-" gc[5] "-" gc[6];
+        print $1, rsid, $2, gc[5], gc[6], ref_freq, alt_freq, dataset, total,
+              ref_gt, hom_ref / total,
+              het_gt, het / total,
+              alt_gt, hom_alt / total,
               variant, population;
     }
-}' "$OUTPUT_DIR/output_frequency.frq" "$OUTPUT_DIR/rsid_map.tsv" > "$OUTPUT_DIR/final_result.tsv"
+}
+' "$OUTPUT_DIR/genotype_counts.gcount" "$OUTPUT_DIR/rsid_map.tsv" > "$OUTPUT_DIR/final_result.tsv"
 
 # 检查输出文件
 if [ -s "$OUTPUT_DIR/final_result.tsv" ]; then
