@@ -10,7 +10,7 @@ POPULATION="global1"                # 群体标识,更改成你样本的族群
 # ========================================================
 module load vcftools
 module load bcftools
-module load plink2
+module load plink/2.0
 
 # 创建输出目录
 mkdir -p "$OUTPUT_DIR"
@@ -29,8 +29,8 @@ else
     vcftools --vcf "$VCF_FILE" --freq --out "$OUTPUT_DIR/output_frequency"
 fi
 # 步骤1.1：使用 plink2 计算实际基因型频率
-echo "步骤1.1：使用 plink2 计算基因型频率..."
-plink2 --vcf "$VCF_FILE" --geno-counts --out "$OUTPUT_DIR/genotype_counts"
+echo "步骤1.1：使用 plink2.0 计算基因型频率..."
+plink --vcf "$VCF_FILE" --geno-counts --out "$OUTPUT_DIR/genotype_counts"
 
 # 检查.frq文件是否生成成功
 if [ ! -s "$OUTPUT_DIR/output_frequency.frq" ]; then
