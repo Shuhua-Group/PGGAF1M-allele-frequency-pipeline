@@ -10,7 +10,7 @@ POPULATION="global1"                # 群体标识,更改成你样本的族群
 # ========================================================
 module load vcftools
 module load bcftools
-module load plink
+module load plink/2.0
 
 # 创建输出目录
 mkdir -p "$OUTPUT_DIR"
@@ -30,7 +30,7 @@ else
 fi
 # 步骤1.1：使用 plink2 计算实际基因型频率
 echo "步骤1.1：使用 plink2.0 计算基因型频率..."
-plink --vcf "$VCF_FILE" --hardy --out "$OUTPUT_DIR/genotype_counts"
+plink --vcf "$VCF_FILE" --geno-counts --out "$OUTPUT_DIR/genotype_counts"
 
 # 检查.frq文件是否生成成功
 if [ ! -s "$OUTPUT_DIR/output_frequency.frq" ]; then
@@ -73,12 +73,16 @@ BEGIN {
           "heterozygous", "heterozygous_freq", "homozygous_alternative",
           "homozygous_alternative_freq", "variant", "population";
 }
-FNR==NR && NR>1 {
+FNR==NR && $1 !~ /^#/ {
     key = $1 "_" $2;
-    hom_ref = $5; het = $6; hom_alt = $7;
-    total = hom_ref + het + hom_alt;
+    ref_allele = $4;
+    alt_allele = $5;
+    ref_count = $6;
+    het_count = $7;
+    alt_count = $8;
+    total = ref_count + het_count + alt_count;
     if (total > 0) {
-        gcount_map[key] = hom_ref "\t" het "\t" hom_alt "\t" total "\t" $3 "\t" $4;
+        gcount_map[key] = ref_count "\t" het_count "\t" alt_count "\t" total "\t" ref_allele "\t" alt_allele;
     }
     next;
 }
@@ -104,7 +108,7 @@ FNR>1 {
               variant, population;
     }
 }
-' "$OUTPUT_DIR/genotype_counts.hwe" "$OUTPUT_DIR/rsid_map.tsv" > "$OUTPUT_DIR/final_result.tsv"
+' "$OUTPUT_DIR/genotype_counts.gcount" "$OUTPUT_DIR/rsid_map.tsv" > "$OUTPUT_DIR/final_result.tsv"
 
 # 检查输出文件
 if [ -s "$OUTPUT_DIR/final_result.tsv" ]; then
