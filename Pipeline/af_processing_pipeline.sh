@@ -11,6 +11,7 @@ POPULATION="global1"                # 群体标识,更改成你样本的族群
 module load vcftools
 module load bcftools
 module load plink/2.0
+#最好使用1.9或2.0版本的plink
 
 # 创建输出目录
 mkdir -p "$OUTPUT_DIR"

@@ -6,6 +6,7 @@
 module load bcftools
 module load plink
 module load plink/2.0 
+#最好使用1.9或2.0版本的plink
 
 # ==============================================
 # 添加vcf路径
