@@ -7,7 +7,7 @@ module load bcftools
 module load plink
 module load plink/2.0 
 #最好使用1.9或2.0版本的plink
-
+#请将所有输出结果（.hwe/.frq等文件）打包
 # ==============================================
 # 添加vcf路径
 # ==============================================
@@ -44,10 +44,6 @@ for K in {1..22} X Y M; do
 done
 
 
-
-
-
-
 # ==============================================
 # 另外，如果样本内有不同的地区和population，请使用如下脚本独立计算每个省份对应的民族频率信息
 # ==============================================
@@ -61,7 +57,7 @@ done
 module load plink
 
 # 首先转换为PLINK格式(确认vcf文件位置)
-plink --vcf /home/PGGAF1M/data/SNP_filtered_variants.vcf.gz --make-bed --out output
+plink --vcf /home/PGGAF1M/data/SNP_filtered.vcf.gz --make-bed --out output
 
 # 创建FID-IID映射文件(从fam文件中提取)
 awk '{print $1, $2}' output.fam > fid_iid_mapping.txt

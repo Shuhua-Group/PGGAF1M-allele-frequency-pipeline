@@ -203,8 +203,16 @@ bash pop_freq_pipeline.sh
 
 ---
 
+## **5. Genotype Frequency Calculation Analysis**  
+The genotype in the af_freq_pipeline is a placeholder and requires additional calculation of genotype frequency. Use PLINK/VCFtools to compute genotype frequency.
+```bash
+# Simplified Genotype Frequency Calculation Usage:
+bash genotype_freq_pipeline.sh
+# Simply run this shell script directly, and edit the input/output paths inline using vim as required.
+```
+---
 
-## **5. Troubleshooting**  
+## **6. Troubleshooting**  
 ⚠️ **Windows/Linux Line Ending Issues:**  
 If scripts fail after downloading via GitHub on Windows:  
 - Convert line endings to Unix format:  
@@ -217,7 +225,7 @@ If scripts fail after downloading via GitHub on Windows:
 
 ---
 
-## **6. Output Validation**  
+## **7. Output Validation**  
 ### **A. Frequency File (`result.tsv`)**  
 ```bash
 less result.tsv  
