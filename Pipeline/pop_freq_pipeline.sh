@@ -16,8 +16,9 @@ vcf_header=""
 
 for K in {1..22} X Y M; do
     # 1. 用bcftools添加变异ID（格式：染色体_位置）
-    bcftools annotate --threads 12 --set-id +'%CHROM\_%POS' ${vcf_path}/${vcf_header}.chr${K}.vcf.gz -Oz -o chr${K}.updateID.vcf.gz
-
+    bcftools annotate --threads 12 --set-id +'%CHROM:_%POS' ${vcf_path}/${vcf_header}.chr${K}.vcf.gz -Oz -o chr${K}.updateID.vcf.gz
+    tabix -p vcf chr${K}.updateID.vcf.gz
+    
     # 2. 转换为PLINK二进制格式
     plink --memory 12000 --threads 12 --vcf chr${K}.updateID.vcf.gz --real-ref-alleles --make-bed --double-id --out chr${K}
 
