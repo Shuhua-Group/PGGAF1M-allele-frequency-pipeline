@@ -26,6 +26,3 @@ plink --bfile "$OUTPUT_DIR/tmp_plink" --hardy --out "$OUTPUT_DIR/plink_geno"
 #vcftools验证frequency数据(根据扩展名选择--vcf/--gzvcf)
 # 1. 计算 allele frequency
 vcftools --vcf "$VCF_FILE" --freq --out "$OUTPUT_DIR/output_prefix"
-
-# 2. 计算 genotype frequency
-vcftools --vcf "$VCF_FILE" --counts --out "$OUTPUT_DIR/output_geno"
