@@ -1,100 +1,101 @@
 #!/bin/bash
 # ==============================================
-# 群体频率计算流程教学（保持原始代码格式）
+# 群体频率计算流程（单VCF文件版本）
 # ==============================================
 
 module load bcftools
 module load plink
-module load plink/2.0 
-#最好使用1.9或2.0版本的plink
-#请将所有输出结果（.hwe/.frq等文件）打包
-# ==============================================
-# 添加vcf路径
-# ==============================================
-vcf_path="" 
-vcf_header=""
-
-for K in {1..22} X Y M; do
-    # 1. 用bcftools添加变异ID（格式：染色体_位置）
-    bcftools annotate --threads 12 --set-id +'%CHROM:_%POS' ${vcf_path}/${vcf_header}.chr${K}.vcf.gz -Oz -o chr${K}.updateID.vcf.gz
-    tabix -p vcf chr${K}.updateID.vcf.gz
-    
-    # 2. 转换为PLINK二进制格式
-    plink --memory 12000 --threads 12 --vcf chr${K}.updateID.vcf.gz --real-ref-alleles --make-bed --double-id --out chr${K}
-
-    # 3. 添加群体信息（民族）到fam文件
-    awk 'NR==FNR{a[$2]=$1; next} {print a[$2], $2, $3, $4, $5, $6}' Population.pop chr${K}.fam > tmp.fam && mv tmp.fam chr${K}.fam
-
-    # 4. 计算民族分层的等位基因频率
-    plink --memory 12000 --threads 12 --bfile chr${K} --real-ref-alleles --freq --family --out population_chr${K}
-
-    # 4.1 计算民族分层的基因型频率（使用 plink2）
-    plink --threads 12 --memory 12000 --bfile chr${K} --keep-fam --geno-counts --out genotype_population_chr${K}
-
-    # 5. 添加群体信息（省份）到fam文件
-    awk 'NR==FNR{a[$2]=$1; next} {print a[$2], $2, $3, $4, $5, $6}' Province.pop chr${K}.fam > tmp.fam && mv tmp.fam chr${K}.fam
-
-    # 6. 计算省份分层的等位基因频率
-    plink --memory 12000 --threads 12 --bfile chr${K} --real-ref-alleles --freq --family --out province_chr${K}
-
-    # 6.1 计算省份分层的基因型频率（使用 plink2）
-    plink --threads 12 --memory 12000 --bfile chr${K} --keep-fam --geno-counts --out genotype_province_chr${K}
-
-    # ==============================================
-    # 内存不足时可降低--memory参数
-done
-
+module load plink2
 
 # ==============================================
-# 另外，如果样本内有不同的地区和population，请使用如下脚本独立计算每个省份对应的民族频率信息
-# ==============================================
-
+# 输入文件设置
     # 注意：samples_province_pop.txt 文件格式要求：
     # 第一列：样本ID
     # 第二列：省份信息
     # 第三列：population信息
     # 例如 WGC022072D   Xizang  Sherpa
+# ==============================================
+input_vcf="/home/SNP_filtered_variants.vcf.gz"  # 替换为您的单文件VCF路径
+sample_info="samples_province_pop.txt"  # 样本信息文件
 
-module load plink
+# ==============================================
+# 1. 预处理VCF文件
+# ==============================================
+# 添加变异ID（格式：染色体_位置）
+bcftools annotate --threads 12 --set-id +'%CHROM\_%POS' ${input_vcf} -Oz -o all_chr.updateID.vcf.gz
 
-# 首先转换为PLINK格式(确认vcf文件位置)
-plink --vcf /home/PGGAF1M/data/SNP_filtered.vcf.gz --make-bed --out output
+# 转换为PLINK二进制格式
+plink --memory 12000 --threads 12 --vcf all_chr.updateID.vcf.gz --real-ref-alleles --make-bed --double-id --out all_chr
 
-# 创建FID-IID映射文件(从fam文件中提取)
-awk '{print $1, $2}' output.fam > fid_iid_mapping.txt
+# ==============================================
+# 2. 创建样本映射文件
+# ==============================================
+awk '{print $1, $2}' all_chr.fam > all_chr.fid_iid_mapping.txt
 
-# 按省份分割
-for province in $(cut -f2 samples_province_pop.txt | sort | uniq); do
-    # 提取该省份样本IID
-    grep -w "$province" samples_province_pop.txt | cut -f1 > ${province}.iids
+# ==============================================
+# 3. 计算整体频率
+# ==============================================
+plink --bfile all_chr --freq --out all_chr_all
+plink2 --bfile all_chr --geno-counts --out all_chr_all_genocounts
 
-    # 通过IID查找对应的FID，生成两列样本列表
-    awk 'NR==FNR {a[$2]=$1; next} $1 in a {print a[$1], $1}' fid_iid_mapping.txt ${province}.iids > ${province}.samples
+# ==============================================
+# 4. 分层计算频率（省份→民族）
+# ==============================================
+# 获取所有省份列表
+provinces=$(cut -f2 ${sample_info} | sort | uniq)
 
-    # 删除临时文件
-    rm ${province}.iids
-
-    # 提取该省份数据
-    plink --bfile output --keep ${province}.samples --make-bed --out ${province}
-
-    # 在该省份内按population计算频率
-    for pop in $(grep -w "$province" samples_province_pop.txt | cut -f3 | sort | uniq); do
-        # 提取该population样本IID
-        grep -w "$pop" samples_province_pop.txt | cut -f1 > ${province}_${pop}.iids
-
-        # 通过IID查找对应的FID，生成两列样本列表
-        awk 'NR==FNR {a[$2]=$1; next} $1 in a {print a[$1], $1}' fid_iid_mapping.txt ${province}_${pop}.iids > ${province}_${pop}.samples
-
-        # 删除临时文件
-        rm ${province}_${pop}.iids
-
-        # 计算等位基因频率
-        plink --bfile ${province} --keep ${province}_${pop}.samples --freq --out ${province}_${pop}_freq
-
-        # 计算基因型频率
-        plink --bfile ${province} --keep ${province}_${pop}.samples --geno-counts --out ${province}_${pop}_genocounts
+for province in ${provinces}; do
+    echo "Processing province: ${province}"
+    
+    # 4.1 提取该省份样本
+    grep -w "${province}" ${sample_info} | cut -f1 > tmp_province.iids
+    awk 'NR==FNR {a[$2]=$1; next} $1 in a {print a[$1], $1}' all_chr.fid_iid_mapping.txt tmp_province.iids > ${province}_samples.txt
+    
+    # 4.2 计算该省份整体频率
+    plink --bfile all_chr --keep ${province}_samples.txt --freq --out all_chr_${province}
+    plink2 --bfile all_chr --keep ${province}_samples.txt --geno-counts --out all_chr_${province}_genocounts
+    
+    # 4.3 获取该省份下的所有民族
+    pops=$(grep -w "${province}" ${sample_info} | cut -f3 | sort | uniq)
+    
+    for pop in ${pops}; do
+        echo "  Processing population: ${pop}"
+        
+        # 提取该民族样本
+        grep -w "${pop}" ${sample_info} | cut -f1 > tmp_pop.iids
+        awk 'NR==FNR {a[$2]=$1; next} $1 in a {print a[$1], $1}' all_chr.fid_iid_mapping.txt tmp_pop.iids > ${province}_${pop}_samples.txt
+        
+        # 计算该民族频率
+        plink --bfile all_chr --keep ${province}_${pop}_samples.txt --freq --out all_chr_${province}_${pop}
+        plink2 --bfile all_chr --keep ${province}_${pop}_samples.txt --geno-counts --out all_chr_${province}_${pop}_genocounts
+        
+        # 清理临时文件
+        rm tmp_pop.iids
     done
+    
+    # 清理临时文件
+    rm tmp_province.iids ${province}_samples.txt
 done
 
+# ==============================================
+# 5. 可选：计算特定民族的全国频率
+# ==============================================
+# 获取所有民族列表
+pops=$(cut -f3 ${sample_info} | sort | uniq)
 
+for pop in ${pops}; do
+    echo "Processing nationwide population: ${pop}"
+    
+    # 提取该民族样本
+    grep -w "${pop}" ${sample_info} | cut -f1 > tmp_pop.iids
+    awk 'NR==FNR {a[$2]=$1; next} $1 in a {print a[$1], $1}' all_chr.fid_iid_mapping.txt tmp_pop.iids > ${pop}_samples.txt
+    
+    # 计算该民族全国频率
+    plink --bfile all_chr --keep ${pop}_samples.txt --freq --out all_chr_nationwide_${pop}
+    plink2 --bfile all_chr --keep ${pop}_samples.txt --geno-counts --out all_chr_nationwide_${pop}_genocounts
+    
+    # 清理临时文件
+    rm tmp_pop.iids ${pop}_samples.txt
+done
 
+echo "All frequency calculations completed!"
